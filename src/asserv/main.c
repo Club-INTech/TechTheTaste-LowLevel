@@ -28,10 +28,13 @@ int main (){
     // Comment savoir si mouvement toujours en cours ? Voir si on a pas reçu de signaux des codeuses depuis quelques instants (genre 10-100 ms ?)
 
 
-    consigne= 2000; 
+    consigne= 1000; 
 
     while(1){
+
         move_translate(consigne);
+
+
     }
 
  

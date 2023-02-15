@@ -7,8 +7,8 @@
 #include "./header/encoder.h"
 
 
-int counter_Right=0;
-int counter_Left=0; 
+long int counter_Right=0;
+long int counter_Left=0; 
 
 
 void init_encoder (uint gpio){
@@ -19,10 +19,10 @@ void init_encoder (uint gpio){
 
 }
 
-void increase (int *counter){
+void increase (long int *counter){
     (*counter) ++ ;
 }
-void decrease (int *counter){
+void decrease (long int *counter){
     (*counter) -- ;
 }
 

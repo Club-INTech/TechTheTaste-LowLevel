@@ -22,7 +22,12 @@ void init_motor (uint gpio, uint *slice_num, uint *channel_num){
 }
 
 
-void command_motors (uint slice_Rev, uint slice_For, uint channel_Rev, uint channel_For, float command, int sens){  
+void command_motors (uint slice_Rev, uint slice_For, uint channel_Rev, uint channel_For, float command, long int sens){  
+        printf("Sens is %i \n", sens);
+        printf("Command is %f \n", command);
+        if (command<0){
+            command=-command;
+        }
 
         if (sens>0){//we want to move forward, turn the reverse off
             pwm_set_chan_level(slice_Rev,channel_Rev,0);

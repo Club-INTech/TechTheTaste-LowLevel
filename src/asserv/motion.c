@@ -27,38 +27,48 @@ void init_all_enc_mot(){
 }
 
 void init_interrupt(){
+    
     gpio_set_irq_enabled_with_callback(Signal_A_Right,GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, read_encoder);
     gpio_set_irq_enabled(Signal_A_Left, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
-    gpio_set_irq_enabled(Signal_B_Right, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
-    gpio_set_irq_enabled(Signal_B_Left, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+    gpio_set_irq_enabled(Signal_B_Right, GPIO_IRQ_EDGE_RISE, true);
+    gpio_set_irq_enabled(Signal_B_Left, GPIO_IRQ_EDGE_RISE, true);
 
 }
-
 
 //Forward: positive distance ; Reverse: negative distance   
 //HL job to convert the distance we want to go to a certain number of ticks and it give it to us as consigne 
 
 //add distance between the two encoder, the delta in the command to the motors, see how to do that
 
-void move_translate (int consigne){ 
-
+void move_translate (int consigne){
+    
     Actual_left = counter_Left;
     Actual_right = counter_Right;
-    Actual_trans= (Actual_left+Actual_right)/2;   
-
+    if (consigne <0){ 
+        Actual_trans= abs((Actual_left+Actual_right)/2); 
+        int Goal = -consigne;  
+    }
+    if (consigne>0){
+        Actual_trans= (Actual_left+Actual_right)/2;  
+        int Goal=consigne; 
+    }
     float alpha_right= 1 - (Actual_right/consigne) ;
     float alpha_left= 1 - (Actual_left/consigne) ;
 
     dif_right= consigne - Actual_right ;
     dif_left = consigne - Actual_left ;
 
-    Output_trans = PID(kP_trans, kI_trans,kD_trans, Actual_trans, consigne,&Sum_error_trans,&last_error_trans);
-    Output_left = PID(kP_left,kI_left,kD_left, Actual_right, consigne, &Sum_error_left,&last_error_left);             //To synchronize the movement, we give to each PID the ticks count of the other encoder
+    printf("dif_r %i \n",dif_right);
+    printf("dif_l %i \n",dif_left);
+
+    Output_trans = PID(kP_trans, kI_trans,kD_trans, Actual_trans,Goal, &Sum_error_trans,&last_error_trans);
+    Output_left = PID(kP_left,kI_left,kD_left,Actual_right, consigne, &Sum_error_left,&last_error_left);             //To synchronize the movement, we give to each PID the ticks count of the other encoder
     Output_right = PID(kP_right,kI_right, kD_right,Actual_left,consigne, &Sum_error_right, &last_error_right);
 
     command_left = Output_trans + (alpha_left * pwm_base) + ((1- alpha_left)*Output_left);
     command_right = Output_trans + (alpha_right * pwm_base) + ((1- alpha_right)*Output_right);
     
+
     //Command PWM right motor
     command_motors (slice_R_Rev,slice_R_For, channel_R_Rev, channel_R_For, command_right, dif_right); 
 
@@ -76,18 +86,17 @@ void move_rotate (int consigne){
 
     Actual_left = counter_Left;
     Actual_right = counter_Right;
-    Actual_rot= abs(Actual_right - Actual_left);                  
+    Actual_rot= Actual_right - Actual_left;                  
 
     float alpha_right= 1 - (Actual_right/Goal_right) ;
     float alpha_left= 1 - (Actual_left/Goal_left) ;
 
-    dif_right= consigne - Actual_right ;
-    dif_left= consigne - Actual_left;
+    dif_right= Goal_right - Actual_right ;
+    dif_left= Goal_left - Actual_left;
 
     Output_rot = PID(kP_rot, kI_rot,kD_rot, Actual_rot, consigne, &Sum_error_rot, &last_error_rot); 
     Output_left = PID(kP_left,kI_left,kD_left,Actual_right,Goal_left, &Sum_error_left, &last_error_left);
     Output_right = PID(kP_right,kI_right, kD_right, Actual_left,Goal_right, &Sum_error_right, &last_error_right);
-
 
     command_left = Output_rot + (alpha_left * pwm_base) + ((1- alpha_left)*Output_left ) ;
     command_right = Output_rot + (alpha_right* pwm_base) + ((1- alpha_right)*Output_right);

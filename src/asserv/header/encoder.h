@@ -7,8 +7,8 @@
 #define Signal_A_Left 17
 #define Signal_B_Left 16
 
-extern int counter_Right;
-extern int counter_Left; 
+extern long int counter_Right;
+extern long int counter_Left; 
 
 
 void init_encoder (uint gpio);

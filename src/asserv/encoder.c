@@ -1,8 +1,8 @@
 #include <stdio.h>
+
 #include "pico/stdlib.h"
 #include "pico/time.h"
 #include "hardware/irq.h"
-
 
 #include "./header/encoder.h"
 

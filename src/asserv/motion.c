@@ -14,6 +14,7 @@
 #include "./header/motion.h"
 
 int consigne;                                   // How far we want to go,int cause ticks, it's the distance or angle we want
+bool no_Lidar;
 
 void init_all_enc_mot(){
 
@@ -67,11 +68,21 @@ void move_translate (int consigne){
     command_right = Output_trans + (alpha_right * pwm_base) + ((1- alpha_right)*Output_right);
     
 
-    //Command PWM right motor
-    command_motors (slice_R_Rev,slice_R_For, channel_R_Rev, channel_R_For, command_right, dif_right); 
+    if (no_Lidar){
+        //Command PWM right motor
+        command_motors (slice_R_Rev,slice_R_For, channel_R_Rev, channel_R_For, command_right, dif_right); 
 
-    //Command PWM left motor
-    command_motors ( slice_L_Rev, slice_L_For,channel_L_Rev,channel_L_For, command_left, dif_left);
+        //Command PWM left motor
+        command_motors ( slice_L_Rev, slice_L_For,channel_L_Rev,channel_L_For, command_left, dif_left);
+    }
+    else {
+        // We turn off both motors
+        command_motors (slice_R_Rev,slice_R_For, channel_R_Rev,channel_R_For,0, dif_right);
+        command_motors (slice_L_Rev,slice_L_For,channel_L_Rev,channel_L_For,0, dif_left);
+    }
+
+
+
 }
 
 
@@ -98,12 +109,19 @@ void move_rotate (int consigne){
     command_left = Output_rot + (alpha_left * pwm_base) + ((1- alpha_left)*Output_left ) ;
     command_right = Output_rot + (alpha_right* pwm_base) + ((1- alpha_right)*Output_right);
 
-    //Command PWM right motor
-    command_motors (slice_R_Rev,slice_R_For, channel_R_Rev,channel_R_For,command_right, dif_right);
+    if (no_Lidar){
+        //Command PWM right motor
+        command_motors (slice_R_Rev,slice_R_For, channel_R_Rev,channel_R_For,command_right, dif_right);
 
-    //Command PWM left motor
-    command_motors (slice_L_Rev,slice_L_For,channel_L_Rev,channel_L_For,command_left, dif_left);
-    
+        //Command PWM left motor
+        command_motors (slice_L_Rev,slice_L_For,channel_L_Rev,channel_L_For,command_left, dif_left);
+    }
+    else { 
+        // We turn off both motors
+        command_motors (slice_R_Rev,slice_R_For, channel_R_Rev,channel_R_For,0, dif_right);
+        command_motors (slice_L_Rev,slice_L_For,channel_L_Rev,channel_L_For,0, dif_left);
+    }
+
 }
 
 
@@ -118,16 +136,12 @@ bool translate (int consigne){
         return true;
     }
     else {
-
-    //Command PWM right motor
-    command_motors (slice_R_Rev,slice_R_For, channel_R_Rev, channel_R_For, 0, dif_right); 
-
-    //Command PWM left motor
-    command_motors ( slice_L_Rev, slice_L_For,channel_L_Rev,channel_L_For, 0, dif_left);
+        //We turn off the motors
+        command_motors (slice_R_Rev,slice_R_For, channel_R_Rev, channel_R_For, 0, dif_right); 
+        command_motors ( slice_L_Rev, slice_L_For,channel_L_Rev,channel_L_For, 0, dif_left);
 
         return false;
     }
-
 }
 
 
@@ -141,6 +155,7 @@ bool rotate (int consigne){
         return true;
     }
     else{
+        //We turn off the motors
         command_motors (slice_R_Rev,slice_R_For, channel_R_Rev,channel_R_For,0, dif_right);
         command_motors (slice_L_Rev,slice_L_For,channel_L_Rev,channel_L_For,0, dif_left);
 

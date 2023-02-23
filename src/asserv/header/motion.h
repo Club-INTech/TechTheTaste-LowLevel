@@ -1,6 +1,6 @@
 #pragma once
 
-#define pwm_base 500                                                    //Fréquence de travail : 20 kHz, wrap à 6250, là PWM de base à 10% but provisoire
+#define pwm_base 625                                                    //Fréquence de travail : 20 kHz, wrap à 6250, là PWM de base à 10% but provisoire
 
 
 extern int consigne;                                                    // How far we want to go,int cause ticks, it's the distance or angle we want

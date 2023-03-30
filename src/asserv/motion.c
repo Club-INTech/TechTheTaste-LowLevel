@@ -39,8 +39,6 @@ int lidar=0;
 int cancelmove=0;
 
 
-//absolute_time_t time_now;
-
 void init_all_enc_mot(){
 
     init_encoder(Signal_A_Right);
@@ -99,7 +97,6 @@ void move_translate (int consigne){
 
     command_left = Output_trans + ((1-alpha_left) * pwm_base) + (alpha_left*Output_left);
     command_right = Output_trans + ((1-alpha_right) * pwm_base) + (alpha_right*Output_right);
-    
 
 
     if (lidar || cancelmove){
@@ -125,7 +122,6 @@ void move_rotate (int consigne){
 
     Actual_rot= (Actual_right - Actual_left)/2;      
                
-
     float alpha_right= 1 - (Actual_right/consigne) ;
     float alpha_left= 1 - (Actual_left/(-consigne)) ;
 

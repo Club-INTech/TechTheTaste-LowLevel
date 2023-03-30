@@ -2,8 +2,7 @@
 
 
 
-
-#define timeChange exp (pow (10,-9)) // Temps d'un cycle PWM
+#define timeChange 5*(pow (10,-5)) // PWM fréquence 20 kHz 5.0E-5
 
 
 extern float Sum_error_right, last_error_right ;

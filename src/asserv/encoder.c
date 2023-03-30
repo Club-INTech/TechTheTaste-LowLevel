@@ -4,12 +4,14 @@
 #include "pico/time.h"
 #include "hardware/irq.h"
 
+
 #include "./header/encoder.h"
 
 
-long int counter_Right=0;
-long int counter_Left=0; 
+long int counter_Right;
+long int counter_Left; 
 
+//absolute_time_t time_int;
 
 void init_encoder (uint gpio){
 
@@ -17,13 +19,18 @@ void init_encoder (uint gpio){
     gpio_set_dir(gpio,GPIO_IN);
     gpio_pull_down(gpio);
 
-}
+} 
 
 void increase (long int *counter){
     (*counter) ++ ;
 }
 void decrease (long int *counter){
     (*counter) -- ;
+}
+
+void init_counters_encoders(long int *counter_Right, long int *counter_Left){
+    (*counter_Right)=0;
+    (*counter_Left)=0; 
 }
 
 
@@ -60,6 +67,8 @@ void read_encoder (uint gpio , uint32_t events){
             decrease(&counter_Left);
         }
     }
+
+    //(*time_int)=get_absolute_time();
 
 }
 

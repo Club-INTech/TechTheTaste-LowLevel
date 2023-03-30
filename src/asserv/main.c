@@ -16,21 +16,17 @@
 
 int main (){
 
+    stdio_init_all();                                           //Allows us to read on the minicom
 
-    stdio_init_all();       //Permet de lire sur le minicom
+    init_all_enc_mot();                                         //Initialize all gpios motors and encoders
 
-    init_all_enc_mot();     //Initialise tous les gpio  moteurs et encodeurs
-
-    init_interrupt(); 	    //Set up the interruptions for the encoders so that they start counting 
+    init_interrupt(); 	                                        //Sets up the interruptions for the encoders so that they start counting 
     
-    sleep_ms(1000);
-    
-    //demander type de mouvement : translation ou rotation
-    //demander consgine : combien de ticks 
 
+
+    init_counters_encoders(&counter_Left, &counter_Right);      //Reinitializes the values of the counters to 0
 
     consigne  = 1000; 
-
 
    while (rotate(consigne)){
         move_rotate(consigne);

@@ -1,21 +1,7 @@
 #pragma once
 
 
-#define kP_right 1
-#define kD_right 0
-#define kI_right 0
 
-#define kP_left 1
-#define kD_left 0
-#define kI_left 0
-
-#define kP_trans 1
-#define kD_trans 0
-#define kI_trans 0
-
-#define kP_rot 1
-#define kD_rot 0
-#define kI_rot 0
 
 #define timeChange exp (pow (10,-9)) // Temps d'un cycle PWM
 

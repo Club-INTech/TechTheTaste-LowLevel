@@ -10,6 +10,9 @@
 extern long int counter_Right;
 extern long int counter_Left; 
 
+//extern absolute_time_t time_int;
+
 
 void init_encoder (uint gpio);
 void read_encoder (uint gpio , uint32_t events);
+void init_counters_encoders(long int *counter_Right, long int *counter_Left);

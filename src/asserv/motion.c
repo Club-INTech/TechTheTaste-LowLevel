@@ -16,6 +16,8 @@
 #include "./header/motor.h"       
 #include "./header/motion.h"
 
+#define MAX(a, b) (a > b) ? a : b;  
+
 
 int consigne;                                   // How far we want to go,int cause ticks, it's the distance or angle we want
 
@@ -85,15 +87,15 @@ void move_translate (int consigne){
         Actual_trans= (Actual_left+Actual_right)/2;  
     }
 
-    float alpha_right= 1 - (Actual_right/consigne) ;
-    float alpha_left= 1 - (Actual_left/consigne) ;
+    float alpha_right= MAX( (1 - (Actual_right/consigne)),0) ;
+    float alpha_left= MAX((1 - (Actual_left/consigne)),0) ;
 
     dif_right = consigne - Actual_right ;
     dif_left = consigne - Actual_left ;
 
-    Output_trans = PID(kP_trans, kI_trans,kD_trans, Actual_trans,abs(consigne), &Sum_error_trans,&last_error_trans);
-    Output_left = PID(kP_left,kI_left,kD_left,Actual_right, consigne, &Sum_error_left,&last_error_left);             //To synchronize the movement, we give to each PID the ticks count of the other encoder
-    Output_right = PID(kP_right,kI_right, kD_right,Actual_left,consigne, &Sum_error_right, &last_error_right);
+    Output_trans = PID(kP_trans, kI_trans,kD_trans, (consigne - Actual_trans), &Sum_error_trans,&last_error_trans);
+    Output_left = PID(kP_left,kI_left,kD_left,dif_right, &Sum_error_left,&last_error_left);             //To synchronize the movement, we give to each PID the ticks count of the other encoder
+    Output_right = PID(kP_right,kI_right, kD_right,dif_left, &Sum_error_right, &last_error_right);
 
     command_left = Output_trans + ((1-alpha_left) * pwm_base) + (alpha_left*Output_left);
     command_right = Output_trans + ((1-alpha_right) * pwm_base) + (alpha_right*Output_right);
@@ -122,15 +124,15 @@ void move_rotate (int consigne){
 
     Actual_rot= (Actual_right - Actual_left)/2;      
                
-    float alpha_right= 1 - (Actual_right/consigne) ;
-    float alpha_left= 1 - (Actual_left/(-consigne)) ;
+    float alpha_right= MAX( (1 - (Actual_right/consigne)),0) ;
+    float alpha_left= MAX ((1 - (Actual_left/(-consigne))),0) ;
 
     dif_right= consigne - Actual_right ;
     dif_left= (-consigne) - Actual_left;
 
-    Output_rot = PID(kP_rot, kI_rot,kD_rot, Actual_rot, consigne , &Sum_error_rot, &last_error_rot); 
-    Output_left = PID(kP_left,kI_left,kD_left, Actual_right),abs(consigne), &Sum_error_left, &last_error_left);
-    Output_right = PID(kP_right,kI_right, kD_right, abs(Actual_left),abs(consigne), &Sum_error_right, &last_error_right);
+    Output_rot = PID(kP_rot, kI_rot,kD_rot, (consigne-Actual_rot), &Sum_error_rot, &last_error_rot); 
+    Output_left = PID(kP_left,kI_left,kD_left, dif_right, &Sum_error_left, &last_error_left);
+    Output_right = PID(kP_right,kI_right, kD_right, dif_left, &Sum_error_right, &last_error_right);
 
     command_left = Output_rot + ((1-alpha_left) * pwm_base) + (alpha_left*Output_left ) ;
     command_right = Output_rot + ((1-alpha_right)* pwm_base) + (alpha_right*Output_right);

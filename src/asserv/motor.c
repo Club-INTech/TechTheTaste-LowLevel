@@ -27,6 +27,9 @@ void command_motors (uint slice_Rev, uint slice_For, uint channel_Rev, uint chan
         if (command<0){
             command=-command;
         }
+        if (command>6250){
+            command=6250;
+        }
 
         if (sens>0){//we want to move forward, turn the reverse off
             pwm_set_chan_level(slice_Rev,channel_Rev,0);

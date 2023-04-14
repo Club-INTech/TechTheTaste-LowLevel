@@ -22,8 +22,8 @@ int main(){
 		*track,
 		NULL,
 		NULL,
-		*identification,
-		*syncro
+		NULL,
+		*identification
 		};
 			
 	BufferInit(&buffer);
@@ -40,6 +40,13 @@ int main(){
 			if(buffer.BufferOrderNumber>orderExecuted){
 				int flag=!ReadNewOrder(order,&buffer);
 				id = getID(order[0]);
+
+				// du debug a la mano
+				uart_putc_raw(uart0, 0x60);
+				for (int i = 0; i < 3; i++) uart_putc_raw(uart0, 0);
+				uart_putc_raw(uart0, (char) id);
+				// 6 -> DEBUG, envoie l'id, a suffi à faire fonctionner identify 
+
 				comp = getCOMP(order[0]);
 				arg0 = (((unsigned short) order[1]) << 8) + ((unsigned short) order[2]);
 				arg1 = (((unsigned short) order[3]) << 8) + ((unsigned short) order[4]);

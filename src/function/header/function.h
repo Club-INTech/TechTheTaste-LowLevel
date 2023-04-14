@@ -13,6 +13,7 @@ void getVar( unsigned int comp, unsigned short arg0, unsigned short arg1);
 void track( unsigned int comp, unsigned short arg0, unsigned short arg1);
 void identification( unsigned int comp, unsigned short arg0, unsigned short arg1); 
 void syncro( unsigned int comp, unsigned short arg0, unsigned short arg1);
+extern struct repeating_timer timer;
 
 void mainprocess();
 

@@ -10,10 +10,8 @@
 #include "hardware/uart.h"
 #include "hardware/irq.h"
 #include "pico/time.h"
-#include <encoder.h>
-#include <PID.h>
-#include <motor.h>       
-#include <motion.h>
+#include <pid.h>
+#include <pidll.h>
 
 
 CircularBuffer buffer;
@@ -78,7 +76,7 @@ void receive() {//receive data and write the buffer
 		int idirq=getID(ch);
 		if(idirq==0){
 				acknowledge(orderlidarstop);
-				lidar=!lidar;
+				lidarstop=!lidarstop;
 				finish(orderlidarstop);
 		}
 		else if(idirq==3){
@@ -117,10 +115,10 @@ void sendVar(int data, int id, int comp){
 
 bool sendtrack(struct repeating_timer *t){
 	uart_putc(UART_ID,0x50);
-	uart_putc(UART_ID,((unsigned short) counter_Left >> 8 ) & 0xFF);
-	uart_putc(UART_ID,((unsigned short)counter_Left) & 0xFF);
-	uart_putc(UART_ID,((unsigned short) counter_Right >> 8) & 0xFF);
-	uart_putc(UART_ID,((unsigned short)counter_Right) & 0XFF);
+	uart_putc(UART_ID,((unsigned short) leftcounter >> 8 ) & 0xFF);
+	uart_putc(UART_ID,((unsigned short)	leftcounter) & 0xFF);
+	uart_putc(UART_ID,((unsigned short) rightcounter >> 8) & 0xFF);
+	uart_putc(UART_ID,((unsigned short)	rightcounter) & 0XFF);
 	return true;
 }
 	
@@ -243,8 +241,11 @@ int tabEqual(char tab1[10], char tab2[10]){
 	return nbs==10?1:0;
 }
 
-int ident(int type){
-	uart_putc(UART_ID, type);
+int ident(unsigned char type){
+	uart_putc_raw(UART_ID,0x70+type);
+	for(int k=0; k<4;k++){
+		uart_putc(UART_ID, 0x00);
+		}
 	return 0;
 }
 

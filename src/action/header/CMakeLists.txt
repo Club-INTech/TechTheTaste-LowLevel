@@ -1,1 +1,1 @@
-target_include_directories( Nyx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories( asserv PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

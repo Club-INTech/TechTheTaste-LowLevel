@@ -39,5 +39,5 @@ unsigned int getARG(unsigned int double_octet);
 float getFloat(unsigned short arg0 , unsigned short arg1);
 int getInt(float floatArg);
 int tabEqual(char tab1[10], char tab2[10]);
-int ident(int type);
+int ident(unsigned char type);
 

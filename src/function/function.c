@@ -1,4 +1,5 @@
 #include "hardware/gpio.h"
+#include "hardware/uart.h"
 #include "pico/time.h"
 #include "pico/stdlib.h"
 #include <stdio.h>
@@ -9,23 +10,22 @@
 #include <stdint.h>
 #include <function.h>
 #include <com.h>
-#include <encoder.h>
-#include <motor.h>
-#include <PID.h>
-#include <motion.h>
+#include <pid.h>
+#include <pidll.h>
 #include <stepper.h>
 #include <motorpumpsvalve.h>
+
 
 float vitesse = 450;
 static char ordermotors[5]={0x70,0x00,0x00,0x00,0x00}; 
 static uint nbmotors=0;
 static short positionmotors[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 static uint nbordermotors=0;
-static float *pid[16]={&kP_right,&kD_right,&kI_right,&kP_left,&kD_left,&kI_left,&kP_trans,&kD_trans,&kI_trans,&kP_rot,&kD_rot,&kI_rot,&vitesse,NULL,NULL,NULL};
+static float *pid[16]={&kP_right,&kD_right,&kI_right,&kP_left,&kD_left,&kI_left,&kP_center,&kD_center,&kI_center,&vitesse,NULL,NULL,NULL,NULL,NULL,NULL};
 static char ordercancelmove[5]={0x30,0x00,0x00,0x00,0x00};
 static char orderlidarstop[5]={0x00,0x00,0x00,0x00,0x00};
 static int curve=0;
-static struct repeating_timer timer;
+struct repeating_timer timer;
 	
 
 
@@ -34,39 +34,51 @@ void lidarStop( unsigned int comp, unsigned short arg0, unsigned short arg1){
 	
 }
 
-
 void move( unsigned int comp, unsigned short arg0, unsigned short arg1){
-	char received[5];
+	encoderIrqSetup();
+	initMotors();
+	initPID(&center,&kP_center,&kI_center,&kD_center);
+	initPID(&left,&kP_left,&kI_left,&kD_left);
+	initPID(&right,&kP_right,&kI_right,&kD_right);
+	initArchi(&archi,&left,&right,&center);
+	initTimer(); 
+	resetArchi(&archi,(short)arg1, (short) arg1);
 	acknowledge(order);
-	init_all_enc_mot();
-	init_interrupt();
-	while(translate((short) arg1)){
-		move_translate((short) arg1);
-		if(cancelmove){
-			move_translate((short) arg1);
+	while(1){
+		if(movelow(&archi)){
 			finish(ordercancelmove);
+			cancelmove=0;
+			removeTimer();
+			cancel_repeating_timer(&timer);
 			return;
 		}
 	}
+	removeTimer();
 	finish(order);
 }
 
-
-void rotatefunction( unsigned int comp,unsigned short arg0, unsigned short arg1){
+void rotatefunction( unsigned int comp, unsigned short arg0, unsigned short arg1){
+	encoderIrqSetup();
+	initMotors();
+	initPID(&center,&kP_center,&kD_center,&kI_center);
+	initPID(&left,&kP_left,&kD_left,&kI_left);
+	initPID(&right,&kP_right,&kD_right,&kI_right);
+	initArchi(&archi,&left,&right,&center);
+	initTimer(); 
+	resetArchi(&archi,-(short)arg1, (short) arg1);
 	acknowledge(order);
-	init_all_enc_mot();
-	init_interrupt();
-	while(rotate((short) arg1)){
-		move_rotate((short) arg1);
-		if(cancelmove){
-			move_rotate((short) arg1);
+	while(1){
+		movelow(&archi);
+		if(movelow(&archi)){
 			finish(ordercancelmove);
+			cancelmove=0;
+			removeTimer();
 			return;
 		}
 	}
+	removeTimer();
 	finish(order);
 }
-
 
 
 void cancelMove( unsigned int comp, unsigned short arg0, unsigned short arg1){
@@ -160,7 +172,8 @@ void track( unsigned int comp, unsigned short arg0, unsigned short arg1){
 
 void identification(unsigned int comp, unsigned short arg0, unsigned short arg1){
 	acknowledge(order);
-	ident(1);
+	ident(0);
+	finish(order);
 }
 
 

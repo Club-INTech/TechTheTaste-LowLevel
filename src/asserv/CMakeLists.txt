@@ -1,17 +1,8 @@
-
-add_executable(main main.c)
-
-add_library (Nyx PID.c encoder.c motion.c motor.c)
-add_subdirectory(header)
-target_link_libraries( Nyx PUBLIC pico_stdlib hardware_pwm hardware_irq hardware_gpio pico_time )  
-
-
-target_link_libraries(main PUBLIC Nyx)
-target_link_libraries(main PUBLIC pico_stdlib hardware_pwm hardware_irq hardware_gpio pico_time hardware_uart )  
-
-
-pico_enable_stdio_usb(main ON)
-pico_enable_stdio_uart(main ON)
-
-pico_add_extra_outputs(main)
-
+add_library(asserv pid.c pidll.c)
+target_link_libraries(asserv pico_stdlib hardware_pwm)
+target_include_directories(asserv PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(test main.c)
+target_link_libraries(test asserv pico_stdlib)
+pico_enable_stdio_usb(test 1)
+pico_enable_stdio_uart(test 0)
+pico_add_extra_outputs(test)

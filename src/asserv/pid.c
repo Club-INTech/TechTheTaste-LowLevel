@@ -54,23 +54,25 @@ void resetArchi(PIDArchi* ARCH, double left_command, double right_command) {
     resetPID(ARCH->central);
     ARCH->command_left = left_command;
     ARCH->command_right = right_command;
-	leftcounter=0;
-	rightcounter=0;
-	ARCH->cnt = 0;
-	ARCH->limit = 70;
+    leftcounter=0;
+    rightcounter=0;
+    ARCH->cnt = 0;
+    ARCH->limit = 70;
+    ARCH->maxSpeed = 2000;
+    ARCH->slowDownThreshold = 400;
 };
+
 
 void updateArchi(PIDArchi* ARCH, double left, double right) {
     updatePID(ARCH->left, ARCH->command_left - left);
     updatePID(ARCH->right, ARCH->command_right - right);
-    updatePID(ARCH->central, 2 * ARCH->command_right- right - ((ARCH->command_left + ARCH->command_right == 0) ? -left:left));
-	if (ARCH->cnt < ARCH->limit) ARCH->cnt++;
+    updatePID(ARCH->central, left / ARCH->command_left - right / ARCH->command_right);
 };
 
 double getArchiLeftOutput(PIDArchi* ARCH) {
-	return getPIDOutput(ARCH->left) * ARCH->cnt / ARCH->limit;
+    return getPIDOutput(ARCH->left) + ((ARCH->command_left > 0) ? -1 : 1 ) * getPIDOutput(ARCH->central);
 };
 
 double getArchiRightOutput(PIDArchi* ARCH) {
-    return getPIDOutput(ARCH->right) * ARCH->cnt / ARCH->limit;
-};
+    return getPIDOutput(ARCH->right) + ((ARCH->command_right > 0) ? 1 : -1 ) * getPIDOutput(ARCH->central);
+}

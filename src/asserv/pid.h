@@ -13,7 +13,8 @@ typedef struct {
 	int limit; 
 	double maxSpeed;
 	double slowDownThreshold;
-	double slowDown;
+	double leftSlowDown;
+	double rightSlowDown;
 
 } PIDArchi;
 

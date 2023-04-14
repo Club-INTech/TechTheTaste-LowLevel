@@ -1,6 +1,6 @@
 #include "pid.h"
 #include "pidll.h"
-#include <cmath>
+
 
 PIDController center;
 PIDController left;
@@ -16,6 +16,8 @@ float kI_left=0;
 float kP_center=1;
 float kD_center=0;
 float kI_center=0;
+
+#define abs(x) ((x)<0 ? -(x) : (x))
 
 
 void initPID(PIDController* PID, float* Kp, float* Ki, float* Kd) {

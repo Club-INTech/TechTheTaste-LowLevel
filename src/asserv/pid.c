@@ -78,14 +78,14 @@ void updateArchi(PIDArchi* ARCH, double left, double right) {
 };
 
 double getArchiLeftOutput(PIDArchi* ARCH) {
-    double res = (getPIDOutput(ARCH->left) + ((ARCH->command_left > 0) ? -1 : 1 ) * getPIDOutput(ARCH->central)) * ARCH->cnt / ARCH->limit* ARCH->leftSlowDown;
+    double res = (getPIDOutput(ARCH->left) + ARCH->command_right * -getPIDOutput(ARCH->central) * ARCH->cnt / ARCH->limit* ARCH->leftSlowDown;
     if (abs(res) < ARCH->maxSpeed) return res;
     if (res < 0) return -ARCH->maxSpeed;
     return ARCH->maxSpeed;
 };
 
 double getArchiRightOutput(PIDArchi* ARCH) {
-    double res = (getPIDOutput(ARCH->right) + ((ARCH->command_right > 0) ? 1 : -1 ) * getPIDOutput(ARCH->central)) * ARCH->cnt / ARCH->limit * ARCH->rightSlowDown;
+    double res = (getPIDOutput(ARCH->right) + ARCH->command_right * getPIDOutput(ARCH->central)) * ARCH->cnt / ARCH->limit * ARCH->rightSlowDown;
     if (abs(res) < ARCH->maxSpeed) return res;
     if (res < 0) return -ARCH->maxSpeed;
     return ARCH->maxSpeed;

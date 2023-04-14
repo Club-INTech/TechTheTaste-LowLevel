@@ -11,6 +11,9 @@ typedef struct {
     double command_left, command_right;
 	int cnt;
 	int limit; 
+	double maxSpeed;
+	double slowDownThreshold;
+	double slowDown;
 
 } PIDArchi;
 

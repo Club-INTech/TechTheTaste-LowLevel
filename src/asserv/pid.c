@@ -1,5 +1,7 @@
 #include "pid.h"
 #include "pidll.h"
+#include <cmath>
+
 PIDController center;
 PIDController left;
 PIDController right;
@@ -35,6 +37,7 @@ void updatePID(PIDController* PID, float error) {
     PID->derivative = error - PID->error;
     PID->integral += error;
     PID->error = error;
+ 
 }
 
 double getPIDOutput(PIDController* PID) {
@@ -67,12 +70,21 @@ void updateArchi(PIDArchi* ARCH, double left, double right) {
     updatePID(ARCH->left, ARCH->command_left - left);
     updatePID(ARCH->right, ARCH->command_right - right);
     updatePID(ARCH->central, left / ARCH->command_left - right / ARCH->command_right);
+    ARCH->cnt += ARCH->cnt < ARCH->limit;
+    ARCH.leftSlowDown = (abs(ARCH->left->error) < ARCH->slowDownThreshold) ? ARCH->left->error / ARCH->command_left : 1.;
+    ARCH.rightSlowDown = (abs(ARCH->right->error) < ARCH->slowDownThreshold) ? ARCH->right->error / ARCH->command_right : 1.;
 };
 
 double getArchiLeftOutput(PIDArchi* ARCH) {
-    return getPIDOutput(ARCH->left) + ((ARCH->command_left > 0) ? -1 : 1 ) * getPIDOutput(ARCH->central);
+    double res = (getPIDOutput(ARCH->left) + ((ARCH->command_left > 0) ? -1 : 1 ) * getPIDOutput(ARCH->central)) * ARCH->cnt / ARCH->limit* ARCH->leftSlowDown;
+    if (abs(res) < ARCH->maxSpeed) return res;
+    if (res < 0) return -ARCH->maxSpeed;
+    return ARCH->maxSpeed;
 };
 
 double getArchiRightOutput(PIDArchi* ARCH) {
-    return getPIDOutput(ARCH->right) + ((ARCH->command_right > 0) ? 1 : -1 ) * getPIDOutput(ARCH->central);
+    double res = (getPIDOutput(ARCH->right) + ((ARCH->command_right > 0) ? 1 : -1 ) * getPIDOutput(ARCH->central)) * ARCH->cnt / ARCH->limit * ARCH->rightSlowDown;
+    if (abs(res) < ARCH->maxSpeed) return res;
+    if (res < 0) return -ARCH->maxSpeed;
+    return ARCH->maxSpeed;
 }

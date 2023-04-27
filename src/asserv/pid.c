@@ -1,23 +1,15 @@
 #include "pid.h"
-#include "pidll.h"
-
-
-PIDController center;
-PIDController left;
-PIDController right;
+PIDController distance;
+PIDController direction;
 PIDArchi archi; 
 
-float kP_right=1;
-float kD_right=0; 
-float kI_right=0; 
-float kP_left=1;
-float kD_left=0;
-float kI_left=0;
-float kP_center=1;
-float kD_center=0;
-float kI_center=0;
 
-#define abs(x) ((x)<0 ? -(x) : (x))
+float kprot=20;
+float kdrot=30;
+float kirot=0;
+float kptrans=15;
+float kdtrans=5;
+float kitrans=3;
 
 
 void initPID(PIDController* PID, float* Kp, float* Ki, float* Kd) {
@@ -33,60 +25,47 @@ void resetPID(PIDController* PID) {
     PID->error = 0.f;
     PID->derivative = 0.f;
     PID->integral = 0.f;
+	for (int i = 0; i < 100; i++) PID->memory[i] = 0.;
 }
 
 void updatePID(PIDController* PID, float error) {
-    PID->derivative = error - PID->error;
-    PID->integral += error;
+    PID->derivative = (error - PID->error) / 0.005;	
+	PID->integral += (error - PID->memory[0])* 0.005;
     PID->error = error;
- 
+	for (int i=0; i<99; i++) PID->memory[i] = PID->memory[i+1];
+	PID->memory[99] = error;
 }
 
 double getPIDOutput(PIDController* PID) {
     return (*PID->Kp) * PID->error + (*PID->Ki) * PID->integral + (*PID->Kd) * PID->derivative;
 }
 
-void initArchi(PIDArchi* ARCH, PIDController* left, PIDController* right, PIDController* central) {
-    ARCH->left = left;
-    ARCH->right = right;
-    ARCH->central = central;
+void initArchi(PIDArchi* ARCH, PIDController* distance, PIDController* direction) {
+    ARCH->distance = distance;
+    ARCH->direction = direction;
 };
 
 
 void resetArchi(PIDArchi* ARCH, double left_command, double right_command) {
-    resetPID(ARCH->left);
-    resetPID(ARCH->right);
-    resetPID(ARCH->central);
-    ARCH->command_left = left_command;
-    ARCH->command_right = right_command;
-    leftcounter=0;
-    rightcounter=0;
-    ARCH->cnt = 0;
-    ARCH->limit = 70;
-    ARCH->maxSpeed = 2000;
-    ARCH->slowDownThreshold = 400;
+    resetPID(ARCH->distance);
+    resetPID(ARCH->direction);
+    ARCH->command_distance = .5 * (left_command + right_command);
+    ARCH->command_direction = .5 * (right_command - left_command);
+	ARCH->cnt = 0;
+	ARCH->limit = 120;
 };
 
 
 void updateArchi(PIDArchi* ARCH, double left, double right) {
-    updatePID(ARCH->left, ARCH->command_left - left);
-    updatePID(ARCH->right, ARCH->command_right - right);
-    updatePID(ARCH->central, left / ARCH->command_left - right / ARCH->command_right);
-    ARCH->cnt += ARCH->cnt < ARCH->limit;
-    ARCH.leftSlowDown = (abs(ARCH->left->error) < ARCH->slowDownThreshold) ? ARCH->left->error / ARCH->command_left : 1.;
-    ARCH.rightSlowDown = (abs(ARCH->right->error) < ARCH->slowDownThreshold) ? ARCH->right->error / ARCH->command_right : 1.;
+    updatePID(ARCH->distance, ARCH->command_distance - .5 * (left + right));
+    updatePID(ARCH->direction, ARCH->command_direction - .5 * (right - left));
+	ARCH->cnt += ARCH->cnt < ARCH->limit;
 };
 
 double getArchiLeftOutput(PIDArchi* ARCH) {
-    double res = (getPIDOutput(ARCH->left) + ARCH->command_right * -getPIDOutput(ARCH->central) * ARCH->cnt / ARCH->limit* ARCH->leftSlowDown;
-    if (abs(res) < ARCH->maxSpeed) return res;
-    if (res < 0) return -ARCH->maxSpeed;
-    return ARCH->maxSpeed;
+    return (getPIDOutput(ARCH->distance) - 3*getPIDOutput(ARCH->direction)) * ARCH->cnt / ARCH->limit;
 };
 
 double getArchiRightOutput(PIDArchi* ARCH) {
-    double res = (getPIDOutput(ARCH->right) + ARCH->command_right * getPIDOutput(ARCH->central)) * ARCH->cnt / ARCH->limit * ARCH->rightSlowDown;
-    if (abs(res) < ARCH->maxSpeed) return res;
-    if (res < 0) return -ARCH->maxSpeed;
-    return ARCH->maxSpeed;
-}
+    return (getPIDOutput(ARCH->distance) + 3*getPIDOutput(ARCH->direction)) * ARCH->cnt / ARCH->limit;
+};

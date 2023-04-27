@@ -1,43 +1,30 @@
  #include "pico/time.h"
-typedef struct {
-	char Buffer[1000];
-	int BufferSize;
-	int Head;
-	int Tail;
-	int BufferFullFlag;
-	int BufferEmptyFlag;
-	int BufferOrderNumber;
-	} CircularBuffer;
-
-extern  CircularBuffer buffer;
-extern char order[5];
-extern int orderExecuted;
-extern unsigned int id;
-extern unsigned int comp;
-extern unsigned short arg0;
-extern unsigned short arg1;
-extern int sync;
-
-bool sendtrack(struct repeating_timer *t);
 void uartInit();
 void uartIrqSetup();
-void receive();
+void receiveParse();
 void acknowledge(char order[5]);
 void finish(char order[5]);
 void sendVar(int data,int id,int comp);
-int WriteBuffer(char data, CircularBuffer *Buffer);
-void BufferInit(CircularBuffer *Buffer);
-int IsBufferEmpty(CircularBuffer *Buffer);
-int ReadBuffer(char *data,  CircularBuffer *Buffer);
-int ReadNewOrder(char order[5], CircularBuffer *Buffer); 
-unsigned long extraire_bit(unsigned long data, int n); 
-unsigned int concatene16(unsigned int octet1, unsigned int octet2);
-unsigned int concatene32(unsigned int double_octet1, unsigned int double_octet2);
-int getID(char octet0); 
-unsigned int getCOMP(unsigned int octet0);
-unsigned int getARG(unsigned int double_octet);
+int getId(char octet0); 
+unsigned int getComp(unsigned int octet0);
+unsigned short getArg0();
+unsigned short getArg1();
 float getFloat(unsigned short arg0 , unsigned short arg1);
 int getInt(float floatArg);
-int tabEqual(char tab1[10], char tab2[10]);
+int tabEqual(char tab1[], char tab2[],int lenght);
 int ident(unsigned char type);
+void lidarStop( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void move( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void rotatefunction( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void cancelMove( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void arm( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void motorTime( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void pumpsvalvemotors( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void motors( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void motorsArgs( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void setVar( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void getVar( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void track( unsigned int comp, unsigned short arg0, unsigned short arg1);
+void identification( unsigned int comp, unsigned short arg0, unsigned short arg1); 
+void receive();
 

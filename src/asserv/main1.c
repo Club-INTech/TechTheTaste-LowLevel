@@ -10,7 +10,7 @@
 #include <pid.h>
 
 #define abs(x) ((x) < 0) ? -(x) : (x)
-/*
+
 int _left, _right;
 
 
@@ -50,22 +50,9 @@ void _rotate(int m) {
 
 
 
-float pid[16] ={20,38,5,5,15,3};*/
+float pid[16] ={20,38,5,5,15,3};
 int main(){
-	stdio_init_all();
-	encoderIrqSetup();
-	initMotors();
-	initPID(&distance,&kptrans,&kitrans,&kdtrans);
-	initPID(&direction,&kprot,&kirot,&kdrot);
-	initArchi(&archi, &distance, &direction);
-	resetArchi(&archi,1000,1000);
-	add_repeating_timer_ms(5,timerPID,NULL,&samplingtimer);
-	while(1){
-		command(&archi);
-		printf("%d,%d",leftcounter,rightcounter);
-	}
-
-/*	gpio_init(1);
+	gpio_init(1);
 	gpio_set_dir(1,GPIO_IN);
 	gpio_set_irq_enabled_with_callback(1,GPIO_IRQ_EDGE_RISE,true,lidar);
 	gpio_init(0);
@@ -91,19 +78,19 @@ int main(){
 	for (int i=0; i < 3; i++) {
 		_move(1000);
 	}
-	_rotate(200);
+	_rotate(-200);
 	_move(1000);
-	_rotate(200);
+	_rotate(-200);
 	for (int i=0; i < 2; i++) {
 		_move(1000);
 	}
 	for (int i=0; i < 3; i++) {
-		_rotate(-220);
+		_rotate(220);
 	}
 	
 	_move(1000);
 	_move(1000);
-	_move(1000);*/
+	_move(1000);
 }
 	
 

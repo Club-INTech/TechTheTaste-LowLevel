@@ -1,38 +1,51 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "hardware/gpio.h"
+#include "hardware/irq.h"
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
+#include "hardware/uart.h"
 #include "pico/time.h"
 #include <pidll.h>
 #include <pidll.h>
 #include <pid.h>
+#include <com.h>
+#define UART_ID uart0
+
+/*------Order_syntax------*/
+char ordercancel[5] = {0x30};
+char ordermove[5]={0x10};
+char orderrotate[5]={0x20};
+ 
+/*------Wheels_target------*/
+static int lefttarget;
+static int righttarget;
+
+
+/*------Timer_definition-----*/
+struct repeating_timer samplingtimer; 
+struct repeating_timer asservtimer;
+
+/*------lidarstop cancelmove init------*/
+int lidarstop=0;
+int cancelmove=0;
 
 /*------encoder_code------*/
 int leftcounter=0;
 int rightcounter=0;
-int cancelmove=0;
-int lidarstop=0;
 
-
-#define Signal_A_Right 19
-#define Signal_B_Right 18
-
-#define Signal_A_Left 17
-#define Signal_B_Left 16
-
-void incrementIrq(uint gpio,uint32_t events){
+void incrementIrq(uint gpio,uint32_t event){
 	switch (gpio) {
-		case 19:	
-			if(gpio_get(18)==1){
+		case 2:	
+			if(gpio_get(3)==1){
 				rightcounter++;
 			}
 			else{
 				rightcounter--;
 			}
 		break;
-		case 17:
-			if(gpio_get(16)==1){
+		case 4:
+			if(gpio_get(5)==1){
 				leftcounter++;
 			}
 			else {
@@ -43,20 +56,20 @@ void incrementIrq(uint gpio,uint32_t events){
 }
 
 int encoderIrqSetup(){
-	gpio_init(18);
-	gpio_set_dir(18,GPIO_IN);
-	gpio_pull_down(18);
-	gpio_set_function(19, GPIO_FUNC_SIO);
-	gpio_set_dir(19, false);
-	gpio_pull_down(19);
-	gpio_set_irq_enabled_with_callback(19, GPIO_IRQ_EDGE_RISE, true, &incrementIrq);
-	gpio_init(16);
-	gpio_set_dir(16,GPIO_IN);
-	gpio_pull_down(16);
-	gpio_set_function(17, GPIO_FUNC_SIO);
-	gpio_set_dir(17, false);
-	gpio_pull_down(17);
-	gpio_set_irq_enabled_with_callback(17, GPIO_IRQ_EDGE_RISE, true, &incrementIrq);
+	gpio_init(3);
+	gpio_set_dir(3,GPIO_IN);
+	gpio_pull_down(3);
+	gpio_set_function(2, GPIO_FUNC_SIO);
+	gpio_set_dir(2, false);
+	gpio_pull_down(2);
+	gpio_set_irq_enabled_with_callback(2, GPIO_IRQ_EDGE_RISE, true, &incrementIrq);
+	gpio_init(5);
+	gpio_set_dir(5,GPIO_IN);
+	gpio_pull_down(5);
+	gpio_set_function(4, GPIO_FUNC_SIO);
+	gpio_set_dir(4, false);
+	gpio_pull_down(4);
+	gpio_set_irq_enabled_with_callback(4, GPIO_IRQ_EDGE_RISE, true, &incrementIrq);
 	return 0;
 }
 
@@ -64,15 +77,8 @@ int encoderIrqSetup(){
 
 /*------motor_control------*/
 
-#define Motor_R_For 26  // right motor, forward
-#define Motor_R_Rev 27 // right motor, reverse
-
-#define Motor_L_For 20 // left motor, forward
-#define Motor_L_Rev 21 // left motor, reverse
-
-
 int initMotors(){
-	int pin[4]={26,27,20,21};
+	int pin[4]={16,17,15,14};
 	for(int k=0;k<4;k++){
 	gpio_set_function(pin[k],GPIO_FUNC_PWM);
 	int slice =pwm_gpio_to_slice_num(pin[k]);
@@ -84,64 +90,87 @@ int initMotors(){
 	return 0;
 }
 
-int commandMotors (int pinforward,int pinbackward,double command){  
-		
+int commandMotors (int pinforward,int pinbackward,double command){
 	int slicerev = pwm_gpio_to_slice_num(pinbackward);
 	int channelrev = pwm_gpio_to_channel(pinbackward);
 	int slicefor = pwm_gpio_to_slice_num(pinforward);
 	int channelfor = pwm_gpio_to_channel(pinforward);
-	
-	if (command>=0){
+	if(lidarstop|cancelmove){
 		pwm_set_chan_level(slicerev,channelrev,0);
-        pwm_set_chan_level(slicefor, channelfor, command); // command is the level 
-    }
+		pwm_set_chan_level(slicefor,channelfor,0);
+	}
 	else{
-		pwm_set_chan_level(slicefor, channelfor,0);
-        pwm_set_chan_level(slicerev, channelrev, -command);
-    }
+		if (command>=0){
+			pwm_set_chan_level(slicerev,channelrev,0);
+			pwm_set_chan_level(slicefor, channelfor, command); // command is the level 
+		}
+		else{
+			pwm_set_chan_level(slicefor, channelfor,0);
+			pwm_set_chan_level(slicerev, channelrev, -command);
+		}	
+	}
 	return 0;
 }
 
 /*------sampling------*/
-
-struct repeating_timer pidtimer; 
 
 bool timerPID(struct repeating_timer *t){
 	updateArchi(&archi,leftcounter,rightcounter);
 	return true;
 }
 
-int initTimer(){
-	add_repeating_timer_ms(5,timerPID,NULL,&pidtimer);
+/*------asserv_startup------*/
+
+bool timerAsserv(struct repeating_timer *t){
+	command(&archi);
+	if(cancelmove){
+		command(&archi);
+		removeTimer();
+		finish(ordercancel);
+		cancelmove=0;
+		removeTimer();
+	}
+	return true;
+}
+
+
+/*-----timers------*/
+
+int initTimers(){
+	add_repeating_timer_ms(5,timerPID,NULL,&samplingtimer);
+	sleep_ms(1000);
+	add_repeating_timer_ms(10,timerAsserv,NULL,&asservtimer);
 	return 0;
 }
 
 int removeTimer(){
-	cancel_repeating_timer(&pidtimer);
+	cancel_repeating_timer(&samplingtimer);
+	cancel_repeating_timer(&asservtimer);
 }
 
 
 /*------pid_control------*/
 
-int movelow(PIDArchi* PIDArchi){
-
-	double outputleft=getArchiLeftOutput(PIDArchi);
+int command(PIDArchi* PIDArchi){
+	double	outputleft=getArchiLeftOutput(PIDArchi);
 	double outputright=getArchiRightOutput(PIDArchi);
-	if(lidarstop|cancelmove){
-		commandMotors(26,27,0);
-		commandMotors(20,21,0);
-		return 1;
-	}
-	else{
-		commandMotors(26,27,outputright);
-		commandMotors(20,21,outputleft);
-		return 0;
-	}
+	commandMotors(16,17,outputright);
+	commandMotors(14,15,outputleft);
 }
 
+/*------order_implementation------*/
 
-
-
+int movelow(int consigneleft, int consigneright){
+	removeTimer();
+	encoderIrqSetup();
+	initMotors();
+	initPID(&distance,&kptrans,&kitrans,&kdtrans);
+	initPID(&direction,&kprot,&kirot,&kdrot);
+	initArchi(&archi, &distance, &direction);
+	resetArchi(&archi,consigneleft,consigneright);
+	initTimers();
+}
+	
 
 
 

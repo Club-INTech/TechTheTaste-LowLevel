@@ -2,9 +2,9 @@
 
 #pragma once 
 
+#include "pico/time.h"
 #include <stdint.h>
 #include <pid.h>
-#include <stdio.h>
 
 extern int leftcounter;
 extern int rightcounter;
@@ -25,9 +25,14 @@ int encoderIrqSetup();
 void incrementIrq(uint gpio,uint32_t event);
 int initMotors();
 int commandMotors (int pinforward,int pinbackward,double command);
-int initTimer();
+int initTimers();
 int removeTimer();
-int movelow(PIDArchi* PIDArchi);
-extern struct repeating_timer pidtimer; 
+int command(PIDArchi* PIDArchi);
+int movelow(int consigneleft,int consigneright);
+bool timerAsserv(struct repeating_timer *t);
+bool timerPID(struct repeating_timer *t);
+extern struct repeating_timer samplingtimer; 
+extern struct repeating_timer asservtimer;
 
-
+extern int outputleft;
+extern int outputright;

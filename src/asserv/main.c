@@ -55,14 +55,15 @@ int main(){
 	stdio_init_all();
 	encoderIrqSetup();
 	initMotors();
-	initPID(&distance,&kptrans,&kitrans,&kdtrans);
-	initPID(&direction,&kprot,&kirot,&kdrot);
-	initArchi(&archi, &distance, &direction);
-	resetArchi(&archi,1000,1000);
-	add_repeating_timer_ms(5,timerPID,NULL,&samplingtimer);
+	//initPID(&distance,&kptrans,&kitrans,&kdtrans);
+	//initPID(&direction,&kprot,&kirot,&kdrot);
+	//initArchi(&archi, &distance, &direction);
+	//resetArchi(&archi,0,0);
+	//.add_repeating_timer_ms(5,timerPID,NULL,&samplingtimer);
+
 	while(1){
-		command(&archi);
-		printf("%d,%d",leftcounter,rightcounter);
+		printf("%d,%d,%d,%d,\n",leftcounter,rightcounter,outputleft,outputright);
+		sleep_ms(500);
 	}
 
 /*	gpio_init(1);

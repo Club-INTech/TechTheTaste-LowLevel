@@ -1,15 +1,16 @@
 #include "pid.h"
+#include "pidll.h"
 PIDController distance;
 PIDController direction;
 PIDArchi archi; 
 
 
-float kprot=20;
-float kdrot=30;
+float kprot=14;
+float kdrot=2;
 float kirot=0;
-float kptrans=15;
-float kdtrans=5;
-float kitrans=3;
+float kptrans=6;
+float kdtrans=1;
+float kitrans=5;
 
 
 void initPID(PIDController* PID, float* Kp, float* Ki, float* Kd) {
@@ -53,6 +54,8 @@ void resetArchi(PIDArchi* ARCH, double left_command, double right_command) {
     ARCH->command_direction = .5 * (right_command - left_command);
 	ARCH->cnt = 0;
 	ARCH->limit = 120;
+	leftcounter=0;
+	rightcounter=0;
 };
 
 

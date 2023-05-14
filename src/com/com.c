@@ -260,9 +260,9 @@ int tabEqual(char tab1[], char tab2[],int lenght){ //check if tow arrays are the
 
 
 int ident(unsigned char type){ //ident the type of the pico
-	uart_putc_raw(UART_ID,0x70+type);
+		putchar_raw(0x70+type);
 	for(int k=0; k<4;k++){
-		uart_putc(UART_ID, 0x00);
+		putchar_raw(0x00);
 		}
 	return 0;
 }
@@ -281,12 +281,17 @@ void lidarStop( unsigned int comp, unsigned short arg0, unsigned short arg1){ //
 
 
 void move( unsigned int comp, unsigned short arg0, unsigned short arg1){ //move the robot in translation 
+	gpio_init(PICO_DEFAULT_LED_PIN);
+	gpio_set_dir(PICO_DEFAULT_LED_PIN,GPIO_OUT);
+	gpio_put(PICO_DEFAULT_LED_PIN,0);
 	acknowledge(order);
+	//consigne= (short)arg1;
 	movelow((short) arg1,(short) arg1);
 }
 
 void rotatefunction( unsigned int comp,unsigned short arg0, unsigned short arg1){ //rotate the robot on himself 
 	acknowledge(order);
+	//consigne= (short)arg1;
 	movelow((short)arg1,-(short)arg1);
 }
 
@@ -295,6 +300,7 @@ void rotatefunction( unsigned int comp,unsigned short arg0, unsigned short arg1)
 void cancelMove( unsigned int comp, unsigned short arg0, unsigned short arg1){ //cancel any move of the robot
 	acknowledge(order);
 	cancelmove=1;
+	finish(order);
 	}
 
 
@@ -350,7 +356,7 @@ void getVar( unsigned int comp, unsigned short arg0, unsigned short arg1){ //rea
 void track( unsigned int comp, unsigned short arg0, unsigned short arg1){ //encoder tracking for PID tuning 
 	curve=!curve;
 	if(curve){
-		add_repeating_timer_ms(100,sendtrack,NULL,&tracktimer);
+		add_repeating_timer_ms(10,sendtrack,NULL,&tracktimer);
 	
 	}
 	else{

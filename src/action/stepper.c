@@ -1,5 +1,6 @@
 #include "hardware/gpio.h"
 #include "hardware/regs/intctrl.h"
+#include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
 #include "hardware/irq.h"
@@ -13,7 +14,7 @@
 #include <com.h>
 #include<stepper.h>
 
-
+int armstop=0;
 static int count[8] = {0,0,0,0,0,0,0,0};
 stepper steppers[8];
 static endstop endstops[8];
@@ -28,8 +29,13 @@ double clockDivider(int speed){
 }
 
 int	wrapCalculator(int speed){
-	double clkfreq = 125000000*16/ceil(125000000.0/(speed*4096));
-	return floor(clkfreq/speed);
+	//double clkfreq = 125000000*16/ceil(125000000.0/(speed*4096));
+	//return floor(clkfreq/speed);
+	int k = 1.0/speed*2e-6;
+	if(k<65535){
+		k=65535;
+	}
+	return k;
 }
 
 void endstoprise(uint gpio ,uint32_t event_mask){
@@ -96,9 +102,9 @@ void stepperCountDown(){
 		mask=mask>>1;
 	}
 	if(tozero==8){
-		finish(armorder);
 		irq_set_enabled(PWM_IRQ_WRAP,false);
 		irq_remove_handler(PWM_IRQ_WRAP,stepperCountDown);
+		armstop=1;	
 	}
 }
 
@@ -148,8 +154,8 @@ int motorValueStepper(stepper motors[],int id[], int dir[], int target[],int ord
 				gpio_put(motors[i].dirPin,dir[k]);
 				irqStepperSetup(&motors[i]);
 				count[motors[i].pwmSlice]=target[k];
-				pwm_set_clkdiv(motors[i].pwmSlice,clockDivider(motors[i].speed));
-				int wrap =wrapCalculator(motors[i].speed);
+				pwm_set_clkdiv(motors[i].pwmSlice,256.f);
+				int wrap =motors[i].speed;//wrapCalculator(motors[i].speed);
 				pwm_set_wrap(motors[i].pwmSlice,wrap);
 				pwm_set_chan_level(motors[i].pwmSlice,motors[i].pwmChan,wrap/2);
 			}
@@ -175,8 +181,8 @@ int armMove(int target[],int speed){
 	}
 	stepper motor1;
 	stepper motor2;
-	stepperInit(&motor1,1,16,17,speed,1);
-	stepperInit(&motor2,2,15,14,speed,2);
+	stepperInit(&motor1,1,0,1,speed,1);
+	stepperInit(&motor2,2,8,9,speed,2);
 	motorValueStepper(steppers,id,dir,utarget,2);
 }
 

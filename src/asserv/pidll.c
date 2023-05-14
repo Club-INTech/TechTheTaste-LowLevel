@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <stdio.h>
+#include "boards/pico.h"
 #include "hardware/gpio.h"
 #include "hardware/irq.h"
+#include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
 #include "hardware/uart.h"
@@ -10,12 +12,14 @@
 #include <pidll.h>
 #include <pid.h>
 #include <com.h>
+#define abs(N) ((N<0)?(-N):(N))
 #define UART_ID uart0
-
+int movestop=0;
+int rotatestop=0;
+int outputleft=0;
+int outputright=0;
 /*------Order_syntax------*/
 char ordercancel[5] = {0x30};
-char ordermove[5]={0x10};
-char orderrotate[5]={0x20};
  
 /*------Wheels_target------*/
 static int lefttarget;
@@ -116,8 +120,34 @@ int commandMotors (int pinforward,int pinbackward,double command){
 
 bool timerPID(struct repeating_timer *t){
 	updateArchi(&archi,leftcounter,rightcounter);
+	command(&archi);
+	if(cancelmove){
+		command(&archi);
+		finish(ordercancel);
+		cancelmove=0;
+		removeTimer();
+	}
+	if(stopTranslate() && abs(archi.command_distance)>2 && lidarstop!=1){
+		commandMotors(16,17,0);
+		commandMotors(14,15,0);
+		movestop=1;
+		removeTimer();
+		gpio_init(PICO_DEFAULT_LED_PIN);
+		gpio_set_dir(PICO_DEFAULT_LED_PIN,GPIO_OUT);
+		gpio_put(PICO_DEFAULT_LED_PIN,1);
+	}
+	if(stopRotate() &&  abs(archi.command_direction)>2 && lidarstop!=1){
+		commandMotors(16,17,0);
+		commandMotors(14,15,0);
+		rotatestop=1;
+		removeTimer();
+		gpio_init(PICO_DEFAULT_LED_PIN);
+		gpio_set_dir(PICO_DEFAULT_LED_PIN,GPIO_OUT);
+		gpio_put(PICO_DEFAULT_LED_PIN,1);
+	}
 	return true;
 }
+
 
 /*------asserv_startup------*/
 
@@ -126,39 +156,50 @@ bool timerAsserv(struct repeating_timer *t){
 	if(cancelmove){
 		command(&archi);
 		removeTimer();
-		finish(ordercancel);
 		cancelmove=0;
-		removeTimer();
 	}
-	return true;
 }
-
 
 /*-----timers------*/
 
 int initTimers(){
 	add_repeating_timer_ms(5,timerPID,NULL,&samplingtimer);
-	sleep_ms(1000);
-	add_repeating_timer_ms(10,timerAsserv,NULL,&asservtimer);
 	return 0;
 }
 
 int removeTimer(){
 	cancel_repeating_timer(&samplingtimer);
-	cancel_repeating_timer(&asservtimer);
 }
 
 
 /*------pid_control------*/
 
 int command(PIDArchi* PIDArchi){
-	double	outputleft=getArchiLeftOutput(PIDArchi);
-	double outputright=getArchiRightOutput(PIDArchi);
+	outputleft=getArchiLeftOutput(PIDArchi);
+	outputright=getArchiRightOutput(PIDArchi);
 	commandMotors(16,17,outputright);
 	commandMotors(14,15,outputleft);
 }
 
-/*------order_implementation------*/
+/*------stop_condition------*/
+int stopTranslate(){
+	if(abs(distance.error)<80 && abs(distance.derivative)<2){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}	
+
+int stopRotate(){
+	if(abs(direction.error)<80 && abs(direction.derivative)<2){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
 
 int movelow(int consigneleft, int consigneright){
 	removeTimer();

@@ -33,3 +33,4 @@ int stepperInit(stepper *stepper,int id,int dirPin, int stepPin, int speed,int a
 int home(stepper stepper[],endstop endstop[], int dir [],int orderlenght);
 int motorValueStepper(stepper motors[],int id[], int dir[], int target[],int orderlenght);
 int armMove(int target[],int speed);
+extern int armstop;

@@ -31,8 +31,13 @@ int command(PIDArchi* PIDArchi);
 int movelow(int consigneleft,int consigneright);
 bool timerAsserv(struct repeating_timer *t);
 bool timerPID(struct repeating_timer *t);
+int stopRotate();
+int stopTranslate();
 extern struct repeating_timer samplingtimer; 
 extern struct repeating_timer asservtimer;
 
 extern int outputleft;
 extern int outputright;
+extern int consigne;
+extern int movestop;
+extern int rotatestop;
